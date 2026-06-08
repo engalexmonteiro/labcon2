@@ -13,7 +13,7 @@ app/
   Repositories/  Isolam o acesso ao MySQL.
   Support/       Utilitários de request/response e bootstrap.
 api/             Endpoints públicos que delegam para Controllers.
-includes/        Configuração, sessão, conexão PDO e mapeadores legados.
+includes/        Configuração, sessão, conexão PDO, instalador e mapeadores legados.
 src/             JavaScript da interface.
 assets/          CSS e arquivos estáticos.
 database/        Schema MySQL.
@@ -40,3 +40,20 @@ api/reservations.php
 - Repositories não devem conter regra de negócio de tela.
 - Services devem concentrar validações importantes, como conflito de horário em reservas.
 - Os arquivos em `api/` devem permanecer pequenos, apenas carregando `app/bootstrap.php` e chamando o Controller.
+
+## Primeira execução
+
+Na primeira chamada ao banco, o sistema usa as constantes de `includes/config.php`:
+
+```php
+DB_HOST
+DB_NAME
+DB_USER
+DB_PASS
+DB_CHARSET
+DB_COLLATION
+```
+
+Com esses dados, `includes/install.php` conecta ao servidor MySQL, cria o banco `DB_NAME` se ele ainda não existir e cria as tabelas necessárias sem apagar dados existentes.
+
+O arquivo `database/schema.sql` continua disponível para instalação manual, mas não é mais obrigatório para o primeiro uso local.
