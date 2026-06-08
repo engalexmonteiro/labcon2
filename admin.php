@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
+    <title>LabCon | Controle de Laboratórios</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div class="brand">
+          <span class="brand-mark">LC</span>
+          <div>
+            <strong>LabCon</strong>
+            <small>Pesquisa e reservas</small>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" type="button" data-view="dashboard">Painel público</button>
+          <button class="nav-item" type="button" data-view="reservations">Reservas</button>
+          <button class="nav-item" type="button" data-view="profile">Meu cadastro</button>
+          <div class="nav-group">
+            <div class="nav-group-title">Cadastro</div>
+            <div class="nav-sublist">
+              <button class="nav-item" type="button" data-view="users">Usuários</button>
+              <div class="nav-nested">
+                <button class="nav-item" type="button" data-view="labs">Laboratórios</button>
+                <button class="nav-item nav-child" type="button" data-view="desks">Mesas</button>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="status-dot"></span>
+          Dados sincronizados com MySQL
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Gerenciamento de laboratórios de pesquisa</p>
+            <h1 id="view-title">Painel público</h1>
+          </div>
+          <div class="topbar-actions">
+            <select id="public-lab-filter" aria-label="Filtrar laboratório do painel"></select>
+            <a class="button ghost" href="index.php">Painel público</a>
+            <a class="button ghost" href="logout.php" id="logout-link">Sair</a>
+            <button class="button ghost" type="button" id="seed-data">Popular exemplo</button>
+            <button class="button danger" type="button" id="clear-data">Limpar dados</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard-view" aria-labelledby="view-title">
+          <div class="info-strip" id="public-insight" aria-live="polite"></div>
+
+          <div class="metrics-grid">
+            <article class="metric">
+              <span>Laboratórios</span>
+              <strong id="metric-labs">0</strong>
+            </article>
+            <article class="metric">
+              <span>Mesas</span>
+              <strong id="metric-desks">0</strong>
+            </article>
+            <article class="metric">
+              <span>Pesquisadores</span>
+              <strong id="metric-users">0</strong>
+            </article>
+            <article class="metric">
+              <span>Reservas ativas</span>
+              <strong id="metric-reservations">0</strong>
+            </article>
+          </div>
+
+          <div class="section-heading">
+            <h2>Ocupação por laboratório</h2>
+            <select id="dashboard-day-filter" aria-label="Filtrar dia no painel"></select>
+          </div>
+          <div id="public-users" class="public-users"></div>
+          <div id="public-board" class="board-grid"></div>
+        </section>
+
+        <section class="view" id="reservations-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="reservation-form">
+              <input type="hidden" id="reservation-id">
+              <h2>Reserva de mesa</h2>
+              <div class="field">
+                <label for="reservation-user">Usuário</label>
+                <select id="reservation-user" required></select>
+              </div>
+              <div class="field">
+                <label for="reservation-lab">Laboratório</label>
+                <select id="reservation-lab" required></select>
+              </div>
+              <div class="field">
+                <label for="reservation-desk">Mesa</label>
+                <select id="reservation-desk" required></select>
+              </div>
+              <div class="field">
+                <label>Grade de reserva: segunda a sábado, 08:00 às 22:00</label>
+                <div class="matrix-toolbar">
+                  <span><i class="legend-box available"></i>Disponível</span>
+                  <span><i class="legend-box selected"></i>Selecionado</span>
+                  <span><i class="legend-box occupied"></i>Ocupado</span>
+                </div>
+                <div class="check-grid" id="reservation-days"></div>
+                <div class="selection-summary" id="reservation-selection-summary">Nenhum horário selecionado.</div>
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar reserva</button>
+                <button class="button ghost" type="button" data-reset="reservation-form">Cancelar</button>
+              </div>
+            </form>
+            <div class="panel">
+              <div class="section-heading compact">
+                <h2>Reservas cadastradas</h2>
+                <select id="reservation-list-filter" aria-label="Filtrar reservas por laboratório"></select>
+              </div>
+              <div id="reservations-list" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="profile-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="profile-form">
+              <h2>Meu cadastro</h2>
+              <div class="profile-photo-field">
+                <input id="profile-photo-data" type="hidden">
+                <div class="profile-photo-preview" aria-label="Foto do usuário">
+                  <img id="profile-photo-preview" class="hidden" alt="Foto do usuário">
+                  <span id="profile-photo-placeholder">Sem foto</span>
+                </div>
+                <div class="profile-photo-controls">
+                  <div class="field">
+                    <label for="profile-photo">Foto</label>
+                    <input id="profile-photo" type="file" accept="image/png,image/jpeg,image/webp">
+                  </div>
+                  <button class="button ghost" type="button" id="profile-photo-remove">Remover foto</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="profile-name">Nome completo</label>
+                <input id="profile-name" type="text" required autocomplete="name" minlength="3" maxlength="120">
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="profile-email">E-mail</label>
+                  <input id="profile-email" type="email" readonly>
+                </div>
+                <div class="field">
+                  <label for="profile-role">Perfil</label>
+                  <input id="profile-role" type="text" readonly>
+                </div>
+              </div>
+              <div class="split-fields two profile-student-only">
+                <div class="field">
+                  <label for="profile-level">Nível</label>
+                  <select id="profile-level">
+                    <option value="graduacao">Graduação</option>
+                    <option value="pos-graduacao">Pós-graduação</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="profile-advisor">Orientador</label>
+                  <select id="profile-advisor"></select>
+                </div>
+              </div>
+              <div class="profile-student-only" id="profile-undergrad-fields">
+                <div class="field">
+                  <label for="profile-course">Curso</label>
+                  <select id="profile-course"></select>
+                </div>
+                <div class="field">
+                  <label for="profile-program">Vínculo</label>
+                  <select id="profile-program">
+                    <option value="PIBIC">PIBIC</option>
+                    <option value="PIID">PIID</option>
+                    <option value="Voluntario">Voluntário</option>
+                  </select>
+                </div>
+              </div>
+              <div class="profile-student-only hidden" id="profile-postgrad-fields">
+                <div class="field">
+                  <label for="profile-postgrad-type">Tipo</label>
+                  <select id="profile-postgrad-type">
+                    <option value="Mestrado">Mestrado</option>
+                    <option value="Doutorado">Doutorado</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field profile-student-only">
+                <label for="profile-research-project">Projeto de Pesquisa</label>
+                <input id="profile-research-project" type="text" maxlength="160">
+              </div>
+              <div class="split-fields two profile-student-only">
+                <div class="field">
+                  <label for="profile-entry-date">Data de entrada</label>
+                  <input id="profile-entry-date" type="date">
+                </div>
+                <div class="field">
+                  <label for="profile-qualification-deadline">Data limite de Qualificação</label>
+                  <input id="profile-qualification-deadline" type="date">
+                </div>
+              </div>
+              <div class="field profile-student-only">
+                <label for="profile-advisor-meeting-url">Link de reunião com orientador</label>
+                <input id="profile-advisor-meeting-url" type="url" maxlength="240" placeholder="https://">
+              </div>
+              <div class="field profile-student-only">
+                <label for="profile-article-url">Link de Artigo / Journal</label>
+                <input id="profile-article-url" type="url" maxlength="240" placeholder="https://">
+              </div>
+              <div class="field profile-student-only">
+                <label for="profile-qualification-url">Link da Qualificação</label>
+                <input id="profile-qualification-url" type="url" maxlength="240" placeholder="https://">
+              </div>
+              <div class="field profile-student-only">
+                <label for="profile-thesis-url">Link da Dissertação / Tese</label>
+                <input id="profile-thesis-url" type="url" maxlength="240" placeholder="https://">
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar meu cadastro</button>
+              </div>
+            </form>
+            <div class="panel">
+              <h2>Dados da conta</h2>
+              <div id="profile-summary" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="users-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="user-form">
+              <input type="hidden" id="user-id">
+              <h2>Cadastro de usuário</h2>
+              <div class="field">
+                <label for="user-name">Nome completo</label>
+                <input id="user-name" type="text" required autocomplete="name" minlength="3" maxlength="120">
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="user-email">E-mail</label>
+                  <input id="user-email" type="email" autocomplete="email" maxlength="160">
+                </div>
+                <div class="field">
+                  <label for="user-password">Senha</label>
+                  <input id="user-password" type="password" autocomplete="new-password" minlength="6" maxlength="72">
+                </div>
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="user-role">Perfil</label>
+                  <select id="user-role" required>
+                    <option value="professor">Professor</option>
+                    <option value="aluno">Aluno</option>
+                    <option value="tecnico">Técnico</option>
+                    <option value="administrador">Administrador</option>
+                  </select>
+                </div>
+                <div class="field student-only">
+                  <label for="student-level">Nível</label>
+                  <select id="student-level">
+                    <option value="graduacao">Graduação</option>
+                    <option value="pos-graduacao">Pós-graduação</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="student-only" id="undergrad-fields">
+                <div class="field">
+                  <label for="student-course">Curso</label>
+                  <select id="student-course"></select>
+                </div>
+                <div class="field">
+                  <label for="student-program">Vínculo</label>
+                  <select id="student-program">
+                    <option value="PIBIC">PIBIC</option>
+                    <option value="PIID">PIID</option>
+                    <option value="Voluntario">Voluntário</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="student-only hidden" id="postgrad-fields">
+                <div class="field">
+                  <label for="postgrad-type">Tipo</label>
+                  <select id="postgrad-type">
+                    <option value="Mestrado">Mestrado</option>
+                    <option value="Doutorado">Doutorado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field student-only">
+                <label for="student-advisor">Orientador</label>
+                <select id="student-advisor"></select>
+              </div>
+              <div class="field student-only">
+                <label for="student-research-project">Projeto de Pesquisa</label>
+                <input id="student-research-project" type="text" maxlength="160">
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar usuário</button>
+                <button class="button ghost" type="button" data-reset="user-form">Cancelar</button>
+              </div>
+            </form>
+            <div class="panel">
+              <h2>Usuários cadastrados</h2>
+              <div id="users-list" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="labs-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="lab-form">
+              <input type="hidden" id="lab-id">
+              <h2>Cadastro de laboratório</h2>
+              <div class="field">
+                <label for="lab-name">Nome do laboratório</label>
+                <input id="lab-name" type="text" required minlength="2" maxlength="80">
+              </div>
+              <div class="field">
+                <label for="lab-location">Localização</label>
+                <input id="lab-location" type="text" placeholder="Bloco, sala ou campus" maxlength="120">
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar laboratório</button>
+                <button class="button ghost" type="button" data-reset="lab-form">Cancelar</button>
+              </div>
+            </form>
+            <div class="panel">
+              <h2>Laboratórios cadastrados</h2>
+              <div id="labs-list" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="desks-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="desk-form">
+              <input type="hidden" id="desk-id">
+              <h2>Cadastro de mesa</h2>
+              <div class="field">
+                <label for="desk-lab">Laboratório</label>
+                <select id="desk-lab" required></select>
+              </div>
+              <div class="field">
+                <label for="desk-name">Identificação da mesa</label>
+                <input id="desk-name" type="text" required placeholder="Mesa 01" minlength="1" maxlength="40">
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar mesa</button>
+                <button class="button ghost" type="button" data-reset="desk-form">Cancelar</button>
+              </div>
+            </form>
+            <div class="panel">
+              <div class="section-heading compact">
+                <h2>Mesas cadastradas</h2>
+                <select id="desk-list-filter" aria-label="Filtrar mesas por laboratório"></select>
+              </div>
+              <div id="desks-list" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="src/config.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+</html>
