@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO users (id, email, password_hash, name, role, source)
+VALUES (
+    'admin-0000000000000000',
+    'admin@labcon.local',
+    '$2y$12$BLAMWlJ.gm0ms0aUp.JwuOyXkw1nOGvxPY9.QD0.BdbLAPmsVYLzq',
+    'Administrador Padrão',
+    'administrador',
+    'manual'
+) ON DUPLICATE KEY UPDATE id = id;
+
 CREATE TABLE IF NOT EXISTS labs (
     id VARCHAR(80) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

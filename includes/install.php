@@ -70,6 +70,29 @@ function create_schema(PDO $db): void {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )" . $tableOptions);
 
+    $defaultAdminPasswordHash = '$2y$12$BLAMWlJ.gm0ms0aUp.JwuOyXkw1nOGvxPY9.QD0.BdbLAPmsVYLzq';
+    $badDefaultAdminPasswordHash = '$2y$12$JBwknBUIerRlrokO9W8HNuSHyOE63s.EvweeL05R/882Emh0i8dcK';
+
+    $db->exec("
+        INSERT INTO users (id, email, password_hash, name, role, source)
+        VALUES (
+            'admin-0000000000000000',
+            'admin@labcon.local',
+            '" . $defaultAdminPasswordHash . "',
+            'Administrador Padrão',
+            'administrador',
+            'manual'
+        ) ON DUPLICATE KEY UPDATE id = id");
+
+    $db->exec("
+        UPDATE users
+        SET password_hash = '" . $defaultAdminPasswordHash . "'
+        WHERE id = 'admin-0000000000000000'
+          AND email = 'admin@labcon.local'
+          AND role = 'administrador'
+          AND source = 'manual'
+          AND password_hash = '" . $badDefaultAdminPasswordHash . "'");
+
     $db->exec("
         CREATE TABLE IF NOT EXISTS labs (
             id VARCHAR(80) PRIMARY KEY,

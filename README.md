@@ -56,4 +56,11 @@ DB_COLLATION
 
 Com esses dados, `includes/install.php` conecta ao servidor MySQL, cria o banco `DB_NAME` se ele ainda não existir e cria as tabelas necessárias sem apagar dados existentes.
 
+O instalador também cria um usuário administrador padrão caso ele ainda não exista:
+
+- E-mail: `admin@labcon.local`
+- Senha: `Admin@123`
+
+Esse login permite acessar imediatamente a área administrativa após a instalação.
+
 O arquivo `database/schema.sql` continua disponível para instalação manual, mas não é mais obrigatório para o primeiro uso local.
