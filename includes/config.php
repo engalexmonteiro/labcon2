@@ -9,6 +9,7 @@ define('DB_COLLATION', 'utf8mb4_unicode_ci');
 
 define('APP_NAME', 'LabCon');
 define('SESSION_NAME', 'labcon_sess');
+define('APP_SECRET', 'labcon-change-this-secret-key');
 
 // Configurações de segurança de sessão
 ini_set('session.cookie_httponly', 1);

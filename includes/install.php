@@ -128,11 +128,31 @@ function create_schema(PDO $db): void {
             FOREIGN KEY (desk_id) REFERENCES desks(id) ON DELETE CASCADE
         )" . $tableOptions);
 
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS app_settings (
+            setting_key VARCHAR(120) PRIMARY KEY,
+            setting_value MEDIUMTEXT DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )" . $tableOptions);
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id VARCHAR(80) PRIMARY KEY,
+            user_id VARCHAR(80) NOT NULL,
+            token_hash VARCHAR(64) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )" . $tableOptions);
+
     create_index_if_missing($db, 'desks', 'idx_desks_lab_id', 'lab_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_user_id', 'user_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_lab_id', 'lab_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_desk_id', 'desk_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_day', 'day');
+    create_index_if_missing($db, 'password_reset_tokens', 'idx_password_reset_token_hash', 'token_hash');
+    create_index_if_missing($db, 'password_reset_tokens', 'idx_password_reset_user_id', 'user_id');
 }
 
 function create_index_if_missing(PDO $db, string $table, string $index, string $column): void {

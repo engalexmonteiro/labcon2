@@ -46,6 +46,16 @@ class AuthController
                 $this->auth->logout();
                 Response::json(['success' => true]);
             }
+
+            if ($action === 'requestPasswordReset') {
+                $this->auth->requestPasswordReset($body['email'] ?? '');
+                Response::json(['success' => true]);
+            }
+
+            if ($action === 'resetPassword') {
+                $this->auth->resetPassword($body['token'] ?? '', $body['password'] ?? '');
+                Response::json(['success' => true]);
+            }
         } catch (RuntimeException $e) {
             Response::error($e->getMessage(), 401);
         } catch (InvalidArgumentException $e) {

@@ -150,9 +150,23 @@
   });
 
   // Recuperar senha
-  document.querySelector("#recover-form").addEventListener("submit", (event) => {
+  document.querySelector("#recover-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    showToast("Recurso de recuperação de senha disponível via administrador do sistema.");
+    const email = document.querySelector("#recover-email").value.trim();
+
+    try {
+      const res = await fetch("api/auth.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "requestPasswordReset", email })
+      });
+      const result = await res.json();
+      if (!result.success) { showToast(result.error || "Nao foi possivel enviar a recuperacao."); return; }
+      showToast("Se o e-mail existir, enviaremos as instrucoes de recuperacao.");
+      document.querySelector("#recover-form").reset();
+    } catch {
+      showToast("Erro de conexao.");
+    }
   });
 
   // Se já logado, redireciona

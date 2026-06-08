@@ -125,6 +125,34 @@
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao popular dados.");
       await this.init();
+    },
+
+    async loadSmtp() {
+      const res = await fetch("api/smtp.php");
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || "Erro ao carregar SMTP.");
+      return result.settings;
+    },
+
+    async saveSmtp(settings) {
+      const res = await fetch("api/smtp.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings)
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || "Erro ao salvar SMTP.");
+      return result.settings;
+    },
+
+    async testSmtp(to) {
+      const res = await fetch("api/smtp.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test", to })
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || "Erro ao testar SMTP.");
     }
   };
 
@@ -434,7 +462,10 @@
         userForm:                   $("#user-form"),
         labForm:                    $("#lab-form"),
         deskForm:                   $("#desk-form"),
-        reservationForm:            $("#reservation-form")
+        reservationForm:            $("#reservation-form"),
+        smtpForm:                   $("#smtp-form"),
+        smtpTestForm:               $("#smtp-test-form"),
+        smtpSummary:                $("#smtp-summary")
       };
     },
 
@@ -449,6 +480,33 @@
       this.renderDashboard(state);
       this.renderProfile(state);
       this.applyDynamicStyles();
+    },
+
+    renderSmtp(settings) {
+      if (!this.els.smtpForm || !settings) return;
+      $("#smtp-enabled").checked      = !!settings.enabled;
+      $("#smtp-host").value           = settings.host || "";
+      $("#smtp-port").value           = settings.port || 587;
+      $("#smtp-encryption").value     = settings.encryption || "tls";
+      $("#smtp-username").value       = settings.username || "";
+      $("#smtp-password").value       = "";
+      $("#smtp-from-email").value     = settings.fromEmail || "";
+      $("#smtp-from-name").value      = settings.fromName || "LabCon";
+      $("#smtp-test-email").value     = settings.fromEmail || "";
+      this.renderSmtpSummary(settings);
+    },
+
+    renderSmtpSummary(settings) {
+      if (!this.els.smtpSummary) return;
+      const status = settings.enabled ? "Ativo" : "Inativo";
+      const password = settings.passwordSet ? "Senha cadastrada" : "Senha nao cadastrada";
+      this.els.smtpSummary.innerHTML = `
+        <div class="row-meta settings-meta">
+          <span>Status: ${Utils.escapeHtml(status)}</span>
+          <span>Host: ${Utils.escapeHtml(settings.host || "Nao informado")}</span>
+          <span>Porta: ${Utils.escapeHtml(settings.port || "")}</span>
+          <span>${Utils.escapeHtml(password)}</span>
+        </div>`;
     },
 
     renderSelects(state) {
@@ -743,7 +801,7 @@
     },
 
     showView(view) {
-      const titles = { dashboard: "Painel público", reservations: "Reservas", profile: "Meu cadastro", users: "Usuários", labs: "Laboratórios", desks: "Mesas" };
+      const titles = { dashboard: "Painel público", reservations: "Reservas", profile: "Meu cadastro", users: "Usuários", labs: "Laboratórios", desks: "Mesas", smtp: "SMTP" };
       Array.from(document.querySelectorAll(".nav-item")).forEach((i) => i.classList.toggle("active", i.dataset.view === view));
       Array.from(document.querySelectorAll(".view")).forEach((s) => s.classList.toggle("active", s.id === `${view}-view`));
       this.els.viewTitle.textContent = titles[view];
@@ -794,6 +852,7 @@
     sessionRole: "aluno",
     session: null,
     currentUserId: "",
+    smtpSettings: null,
 
     async init() {
       View.init();
@@ -829,6 +888,7 @@
 
       this.applyPermissions();
       View.render(Repository.getState());
+      if (this.canAccess("smtp")) await this.loadSmtpSettings();
     },
 
     currentRole() { return this.sessionRole; },
@@ -867,6 +927,8 @@
       View.els.labForm.addEventListener("submit",        (e) => this.saveLab(e));
       View.els.deskForm.addEventListener("submit",       (e) => this.saveDesk(e));
       View.els.reservationForm.addEventListener("submit",(e) => this.saveReservation(e));
+      if (View.els.smtpForm) View.els.smtpForm.addEventListener("submit", (e) => this.saveSmtp(e));
+      if (View.els.smtpTestForm) View.els.smtpTestForm.addEventListener("submit", (e) => this.testSmtp(e));
 
       $("#user-role").addEventListener("change",    () => View.updateStudentFields());
       $("#student-level").addEventListener("change",() => View.updateStudentFields());
@@ -937,6 +999,52 @@
       } catch (error) {
         View.render(Repository.getState());
         View.toast(error.message || "Erro ao salvar dados.");
+      }
+    },
+
+    async loadSmtpSettings() {
+      try {
+        this.smtpSettings = await Repository.loadSmtp();
+        View.renderSmtp(this.smtpSettings);
+      } catch (error) {
+        View.toast(error.message || "Nao foi possivel carregar SMTP.");
+      }
+    },
+
+    async saveSmtp(event) {
+      event.preventDefault();
+      if (!this.canAccess("smtp")) { View.toast("Sem acesso a configuracao SMTP."); return; }
+      const password = $("#smtp-password").value;
+      const settings = {
+        enabled: $("#smtp-enabled").checked,
+        host: $("#smtp-host").value.trim(),
+        port: Number($("#smtp-port").value || 587),
+        encryption: $("#smtp-encryption").value,
+        username: $("#smtp-username").value.trim(),
+        password,
+        keepPassword: !password,
+        fromEmail: $("#smtp-from-email").value.trim(),
+        fromName: $("#smtp-from-name").value.trim()
+      };
+
+      try {
+        this.smtpSettings = await Repository.saveSmtp(settings);
+        View.renderSmtp(this.smtpSettings);
+        View.toast("Configuracao SMTP salva.");
+      } catch (error) {
+        View.toast(error.message || "Erro ao salvar SMTP.");
+      }
+    },
+
+    async testSmtp(event) {
+      event.preventDefault();
+      if (!this.canAccess("smtp")) { View.toast("Sem acesso a configuracao SMTP."); return; }
+      const to = $("#smtp-test-email").value.trim();
+      try {
+        await Repository.testSmtp(to);
+        View.toast("E-mail de teste enviado.");
+      } catch (error) {
+        View.toast(error.message || "Erro ao enviar teste SMTP.");
       }
     },
 

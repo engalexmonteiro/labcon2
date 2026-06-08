@@ -71,9 +71,27 @@ CREATE TABLE IF NOT EXISTS reservations (
     FOREIGN KEY (desk_id) REFERENCES desks(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key VARCHAR(120) PRIMARY KEY,
+    setting_value MEDIUMTEXT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id VARCHAR(80) PRIMARY KEY,
+    user_id VARCHAR(80) NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Índices para melhorar consultas
 CREATE INDEX IF NOT EXISTS idx_desks_lab_id ON desks(lab_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_user_id ON reservations(user_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_lab_id ON reservations(lab_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_desk_id ON reservations(desk_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_day ON reservations(day);
+CREATE INDEX IF NOT EXISTS idx_password_reset_token_hash ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens(user_id);

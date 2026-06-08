@@ -34,6 +34,12 @@
               </div>
             </div>
           </div>
+          <div class="nav-group">
+            <div class="nav-group-title">Configuracao</div>
+            <div class="nav-sublist">
+              <button class="nav-item" type="button" data-view="smtp">SMTP</button>
+            </div>
+          </div>
         </nav>
 
         <div class="sidebar-footer">
@@ -370,6 +376,74 @@
                 <select id="desk-list-filter" aria-label="Filtrar mesas por laboratório"></select>
               </div>
               <div id="desks-list" class="table-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="smtp-view" aria-labelledby="view-title">
+          <div class="work-layout">
+            <form class="panel form-panel" id="smtp-form">
+              <h2>Configuracao SMTP</h2>
+              <div class="field inline-check">
+                <label>
+                  <input id="smtp-enabled" type="checkbox">
+                  Ativar envio de e-mails
+                </label>
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="smtp-host">Servidor SMTP</label>
+                  <input id="smtp-host" type="text" maxlength="160" placeholder="smtp.exemplo.com">
+                </div>
+                <div class="field">
+                  <label for="smtp-port">Porta</label>
+                  <input id="smtp-port" type="number" min="1" max="65535" value="587">
+                </div>
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="smtp-encryption">Criptografia</label>
+                  <select id="smtp-encryption">
+                    <option value="tls">STARTTLS</option>
+                    <option value="ssl">SSL</option>
+                    <option value="none">Nenhuma</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="smtp-username">Usuario SMTP</label>
+                  <input id="smtp-username" type="text" autocomplete="off" maxlength="160">
+                </div>
+              </div>
+              <div class="field">
+                <label for="smtp-password">Senha SMTP</label>
+                <input id="smtp-password" type="password" autocomplete="new-password" maxlength="240" placeholder="Preencha para alterar">
+              </div>
+              <div class="split-fields two">
+                <div class="field">
+                  <label for="smtp-from-email">E-mail remetente</label>
+                  <input id="smtp-from-email" type="email" maxlength="254">
+                </div>
+                <div class="field">
+                  <label for="smtp-from-name">Nome remetente</label>
+                  <input id="smtp-from-name" type="text" maxlength="120" value="LabCon">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Salvar SMTP</button>
+              </div>
+            </form>
+            <div class="panel">
+              <h2>Teste de envio</h2>
+              <form id="smtp-test-form">
+                <div class="field">
+                  <label for="smtp-test-email">Enviar teste para</label>
+                  <input id="smtp-test-email" type="email" maxlength="254">
+                </div>
+                <div class="form-actions">
+                  <button class="button ghost" type="submit">Enviar e-mail de teste</button>
+                </div>
+              </form>
+              <div class="settings-summary" id="smtp-summary"></div>
             </div>
           </div>
         </section>

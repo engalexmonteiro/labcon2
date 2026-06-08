@@ -469,6 +469,29 @@ select:focus {
   border-color: var(--primary);
 }
 
+.inline-check label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inline-check input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  padding: 0;
+}
+
+.settings-summary {
+  margin-top: 18px;
+}
+
+.settings-meta span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: var(--surface-muted);
+}
+
 .split-fields {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

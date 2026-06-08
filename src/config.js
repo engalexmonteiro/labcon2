@@ -38,7 +38,7 @@
       aluno:         ["dashboard", "reservations", "profile"],
       professor:     ["dashboard", "reservations", "profile", "users", "labs", "desks"],
       tecnico:       ["dashboard", "reservations", "profile", "users", "labs", "desks"],
-      administrador: ["dashboard", "reservations", "profile", "users", "labs", "desks"]
+      administrador: ["dashboard", "reservations", "profile", "users", "labs", "desks", "smtp"]
     }
   };
 }());
