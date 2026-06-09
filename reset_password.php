@@ -12,15 +12,16 @@ $_csrf = csrf_token();
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
     <title>LabCon | Redefinir senha</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
     <link rel="stylesheet" href="assets/css/styles.css">
   </head>
   <body>
     <main class="auth-page">
       <section class="auth-panel" aria-labelledby="reset-title">
         <div class="brand auth-brand">
-          <span class="brand-mark">LC</span>
+          <img class="brand-logo" src="assets/img/labcontrol-logo.png" alt="LabControl">
           <div>
-            <strong>LabCon</strong>
             <small>Recuperacao de acesso</small>
           </div>
         </div>

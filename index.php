@@ -7,15 +7,16 @@
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
     <title>LabCon | Painel Público</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
     <link rel="stylesheet" href="assets/css/styles.css">
   </head>
   <body>
     <main class="public-page">
       <header class="public-topbar">
         <div class="brand public-brand">
-          <span class="brand-mark">LC</span>
+          <img class="brand-logo" src="assets/img/labcontrol-logo.png" alt="LabControl">
           <div>
-            <strong>LabCon</strong>
             <small>Painel público de laboratórios</small>
           </div>
         </div>
