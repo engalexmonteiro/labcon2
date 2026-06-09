@@ -182,7 +182,7 @@ select {
 }
 
 .public-brand .brand-logo {
-  width: clamp(150px, 18vw, 210px);
+  width: clamp(75px, 9vw, 105px);
 }
 
 .brand small {
@@ -1148,6 +1148,10 @@ select:focus {
   .auth-brand .brand-logo,
   .public-brand .brand-logo {
     width: clamp(118px, 42vw, 160px);
+  }
+
+  .public-brand .brand-logo {
+    width: clamp(59px, 21vw, 80px);
   }
 
   .auth-tabs {
