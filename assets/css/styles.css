@@ -89,6 +89,8 @@ select {
 
 .auth-brand {
   margin-bottom: 22px;
+  justify-items: center;
+  text-align: center;
 }
 
 .auth-tabs {
@@ -170,9 +172,17 @@ select {
 
 .brand-logo {
   display: block;
-  width: min(210px, 100%);
+  width: clamp(126px, 14vw, 168px);
   height: auto;
   flex: 0 1 auto;
+}
+
+.auth-brand .brand-logo {
+  width: clamp(138px, 34vw, 190px);
+}
+
+.public-brand .brand-logo {
+  width: clamp(150px, 18vw, 210px);
 }
 
 .brand small {
@@ -1132,6 +1142,12 @@ select:focus {
   .public-hero {
     align-items: stretch;
     display: grid;
+  }
+
+  .brand-logo,
+  .auth-brand .brand-logo,
+  .public-brand .brand-logo {
+    width: clamp(118px, 42vw, 160px);
   }
 
   .auth-tabs {
