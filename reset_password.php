@@ -1,3 +1,8 @@
+<?php
+require_once __DIR__ . '/app/bootstrap.php';
+start_session();
+$_csrf = csrf_token();
+?>
 <!doctype html>
 <html lang="pt-BR">
   <head>
@@ -45,6 +50,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="src/config.js"></script>
+    <script>window.LabConCsrfToken = <?= json_encode($_csrf) ?>;</script>
     <script>
       (function () {
         "use strict";
@@ -69,7 +75,7 @@
           try {
             const res = await fetch("api/auth.php", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-CSRF-Token": window.LabConCsrfToken || "" },
               body: JSON.stringify({ action: "resetPassword", token, password })
             });
             const result = await res.json();

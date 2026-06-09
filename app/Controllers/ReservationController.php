@@ -20,7 +20,10 @@ class ReservationController
 
     public function handle(Request $request): void
     {
-        require_auth();
+        $caller = require_auth();
+        $callerRole = $caller['role'] ?? '';
+        $callerId   = $caller['id']   ?? '';
+        $canManageOthers = in_array($callerRole, ['professor', 'tecnico', 'administrador'], true);
 
         try {
             if ($request->method() === 'GET') {
@@ -28,8 +31,17 @@ class ReservationController
             }
 
             if ($request->method() === 'POST') {
-                $body = $request->body();
+                $body  = $request->body();
                 $items = isset($body['items']) ? $body['items'] : [$body];
+
+                if (!$canManageOthers) {
+                    foreach ($items as $item) {
+                        if (($item['userId'] ?? '') !== $callerId) {
+                            Response::error('Sem permissão para reservar em nome de outro usuário.', 403);
+                        }
+                    }
+                }
+
                 $saved = $this->reservations->saveMany($items);
 
                 if (count($saved) === 1) {
@@ -40,11 +52,20 @@ class ReservationController
             }
 
             if ($request->method() === 'PUT') {
-                Response::json(['success' => true, 'item' => $this->reservations->saveOne($request->body())]);
+                $body = $request->body();
+                if (!$canManageOthers && ($body['userId'] ?? '') !== $callerId) {
+                    Response::error('Sem permissão para alterar reserva de outro usuário.', 403);
+                }
+                Response::json(['success' => true, 'item' => $this->reservations->saveOne($body)]);
             }
 
             if ($request->method() === 'DELETE') {
-                $this->reservations->delete((string) $request->query('id', ''));
+                $id = (string) $request->query('id', '');
+                if (!$canManageOthers) {
+                    $this->reservations->deleteOwned($id, $callerId);
+                } else {
+                    $this->reservations->delete($id);
+                }
                 Response::json(['success' => true]);
             }
         } catch (InvalidArgumentException | RuntimeException $e) {

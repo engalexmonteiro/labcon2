@@ -21,7 +21,9 @@ class SmtpMailer
         }
 
         $host = $this->settings['host'];
-        $port = (int) $this->settings['port'];
+        $this->validateSmtpHost($host);
+
+        $port   = (int) $this->settings['port'];
         $scheme = $this->settings['encryption'] === 'ssl' ? 'ssl://' : '';
         $this->socket = @stream_socket_client($scheme . $host . ':' . $port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT);
         if (!$this->socket) {
@@ -41,10 +43,13 @@ class SmtpMailer
             $this->command('EHLO ' . $server, [250]);
         }
 
+        $fromEmail = $this->sanitizeSmtpAddress($this->settings['fromEmail']);
+        $toEmail   = $this->sanitizeSmtpAddress($toEmail);
+
         $this->command('AUTH LOGIN', [334]);
         $this->command(base64_encode($this->settings['username']), [334]);
         $this->command(base64_encode($this->settings['password']), [235]);
-        $this->command('MAIL FROM:<' . $this->settings['fromEmail'] . '>', [250]);
+        $this->command('MAIL FROM:<' . $fromEmail . '>', [250]);
         $this->command('RCPT TO:<' . $toEmail . '>', [250, 251]);
         $this->command('DATA', [354]);
 
@@ -53,6 +58,41 @@ class SmtpMailer
         $this->expect([250]);
         $this->command('QUIT', [221]);
         fclose($this->socket);
+    }
+
+    private function validateSmtpHost(string $host): void
+    {
+        $host = strtolower(trim($host));
+        if ($host === '') {
+            throw new RuntimeException('Host SMTP não configurado.');
+        }
+
+        // Bloquear loopback, link-local e RFC-1918
+        $blockedPatterns = [
+            '/^localhost$/i',
+            '/^127\./i',
+            '/^::1$/',
+            '/^0\./i',
+            '/^10\./i',
+            '/^172\.(1[6-9]|2\d|3[01])\./i',
+            '/^192\.168\./i',
+            '/^169\.254\./i',
+            '/^fc00:/i',
+            '/^fe80:/i',
+            '/^metadata\.google\.internal$/i',
+        ];
+
+        foreach ($blockedPatterns as $pattern) {
+            if (preg_match($pattern, $host)) {
+                throw new RuntimeException('Host SMTP inválido.');
+            }
+        }
+    }
+
+    private function sanitizeSmtpAddress(string $email): string
+    {
+        // Remove caracteres que poderiam injetar comandos no protocolo SMTP
+        return preg_replace('/[\r\n<>]/', '', $email) ?? '';
     }
 
     private function buildMessage(string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody): string
@@ -100,7 +140,7 @@ class SmtpMailer
     private function address(string $email, string $name): string
     {
         $name = trim($name);
-        return ($name ? $this->encodeHeader($name) . ' ' : '') . '<' . $email . '>';
+        return ($name ? $this->encodeHeader($name) . ' ' : '') . '<' . $this->sanitizeSmtpAddress($email) . '>';
     }
 
     private function encodeHeader(string $value): string

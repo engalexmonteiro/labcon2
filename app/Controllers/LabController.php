@@ -18,7 +18,7 @@ class LabController
 
     public function handle(Request $request): void
     {
-        require_auth();
+        $caller = require_auth();
 
         try {
             if ($request->method() === 'GET') {
@@ -26,10 +26,16 @@ class LabController
             }
 
             if ($request->method() === 'POST' || $request->method() === 'PUT') {
+                if (!in_array($caller['role'] ?? '', ['professor', 'tecnico', 'administrador'], true)) {
+                    Response::error('Sem permissão para gerenciar laboratórios.', 403);
+                }
                 Response::json(['success' => true, 'item' => $this->labs->save($request->body())]);
             }
 
             if ($request->method() === 'DELETE') {
+                if (!in_array($caller['role'] ?? '', ['professor', 'tecnico', 'administrador'], true)) {
+                    Response::error('Sem permissão para excluir laboratórios.', 403);
+                }
                 $this->labs->delete((string) $request->query('id', ''));
                 Response::json(['success' => true]);
             }

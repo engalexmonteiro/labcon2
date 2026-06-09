@@ -18,7 +18,7 @@ class UserController
 
     public function handle(Request $request): void
     {
-        require_auth();
+        $caller = require_auth();
 
         try {
             if ($request->method() === 'GET') {
@@ -26,10 +26,25 @@ class UserController
             }
 
             if ($request->method() === 'POST' || $request->method() === 'PUT') {
-                Response::json(['success' => true, 'item' => $this->users->save($request->body())]);
+                $body      = $request->body();
+                $targetId  = $body['id'] ?? '';
+                $callerRole = $caller['role'] ?? '';
+
+                // Não-admins só podem editar o próprio cadastro e não podem alterar role
+                if ($callerRole !== 'administrador') {
+                    if ($targetId !== ($caller['id'] ?? '')) {
+                        Response::error('Sem permissão para alterar outro usuário.', 403);
+                    }
+                    unset($body['role']);
+                }
+
+                Response::json(['success' => true, 'item' => $this->users->save($body)]);
             }
 
             if ($request->method() === 'DELETE') {
+                if (($caller['role'] ?? '') !== 'administrador') {
+                    Response::error('Apenas o administrador pode excluir usuários.', 403);
+                }
                 $this->users->delete((string) $request->query('id', ''));
                 Response::json(['success' => true]);
             }

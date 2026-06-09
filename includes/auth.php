@@ -8,6 +8,43 @@ function start_session(): void {
     }
 }
 
+function csrf_token(): string {
+    start_session();
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function verify_csrf_token(): void {
+    $header = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    $token  = csrf_token();
+    if (!$header || !hash_equals($token, $header)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Token CSRF inválido.']);
+        exit;
+    }
+}
+
+function verify_csrf_if_mutating(): void {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        verify_csrf_token();
+    }
+}
+
+function require_role(string ...$roles): array {
+    $user = require_auth();
+    if (!in_array($user['role'] ?? '', $roles, true)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+        exit;
+    }
+    return $user;
+}
+
 function require_auth(): array {
     start_session();
     if (empty($_SESSION['user_id'])) {

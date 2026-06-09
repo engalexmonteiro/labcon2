@@ -15,12 +15,17 @@ abstract class BaseRepository
 
     protected function upsert(string $table, array $fields): void
     {
-        $cols = array_keys($fields);
+        $cols         = array_keys($fields);
+        $quotedCols   = array_map(fn(string $c): string => '`' . str_replace('`', '``', $c) . '`', $cols);
         $placeholders = implode(', ', array_fill(0, count($fields), '?'));
-        $updates = implode(', ', array_map(fn(string $col): string => "$col = VALUES($col)", $cols));
+        $updates      = implode(', ', array_map(
+            fn(string $qc): string => "$qc = VALUES($qc)",
+            $quotedCols
+        ));
 
-        $sql = 'INSERT INTO ' . $table . ' (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')
-                ON DUPLICATE KEY UPDATE ' . $updates;
+        $sql = 'INSERT INTO `' . str_replace('`', '``', $table) . '`'
+             . ' (' . implode(', ', $quotedCols) . ') VALUES (' . $placeholders . ')'
+             . ' ON DUPLICATE KEY UPDATE ' . $updates;
 
         $this->db->prepare($sql)->execute(array_values($fields));
     }

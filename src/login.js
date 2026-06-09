@@ -2,6 +2,9 @@
   "use strict";
 
   const cfg  = window.LabConConfig;
+  function csrfHeaders() {
+    return { "Content-Type": "application/json", "X-CSRF-Token": window.LabConCsrfToken || "" };
+  }
   const tabs   = Array.from(document.querySelectorAll("[data-auth-view]"));
   const panels = Array.from(document.querySelectorAll("[data-auth-panel]"));
   const toast  = document.querySelector("#toast");
@@ -92,7 +95,7 @@
     try {
       const res    = await fetch("api/auth.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify({ action: "login", email, password })
       });
       const result = await res.json();
@@ -138,7 +141,7 @@
     try {
       const res    = await fetch("api/auth.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify(body)
       });
       const result = await res.json();

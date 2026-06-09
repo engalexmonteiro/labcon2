@@ -66,6 +66,23 @@ class ReservationService
         $this->reservations->delete($id);
     }
 
+    public function deleteOwned(string $id, string $userId): void
+    {
+        if (!$id) {
+            throw new InvalidArgumentException('ID não informado.');
+        }
+
+        $row = $this->reservations->find($id);
+        if (!$row) {
+            throw new InvalidArgumentException('Reserva não encontrada.');
+        }
+        if ($row['user_id'] !== $userId) {
+            throw new RuntimeException('Sem permissão para excluir esta reserva.');
+        }
+
+        $this->reservations->delete($id);
+    }
+
     private function validate(array $item): void
     {
         if (empty($item['id']) || empty($item['userId']) || empty($item['labId'])

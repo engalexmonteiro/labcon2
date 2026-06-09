@@ -24,6 +24,9 @@ class AuthService
         $this->smtpSettings = $smtpSettings ?? new SmtpSettingsService();
     }
 
+    private const MAX_ATTEMPTS   = 10;
+    private const WINDOW_SECONDS = 300;
+
     public function login(string $email, string $password): array
     {
         $email = trim($email);
@@ -31,15 +34,57 @@ class AuthService
             throw new InvalidArgumentException('E-mail e senha são obrigatórios.');
         }
 
+        $ip         = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $identifier = hash('sha256', $ip . '|' . strtolower($email));
+
+        $this->enforceRateLimit($identifier);
+
         $row = $this->users->findByEmail($email);
         if (!$row || !$row['password_hash'] || !password_verify($password, $row['password_hash'])) {
+            $this->recordFailedAttempt($identifier);
             throw new RuntimeException('E-mail ou senha incorretos.');
         }
+
+        $this->clearAttempts($identifier);
 
         $user = user_to_array($row);
         set_session_user($user);
 
         return $user;
+    }
+
+    private function enforceRateLimit(string $identifier): void
+    {
+        $db   = get_db();
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM login_attempts
+             WHERE identifier = ? AND attempted_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)'
+        );
+        $stmt->execute([$identifier, self::WINDOW_SECONDS]);
+        $count = (int) $stmt->fetchColumn();
+
+        if ($count >= self::MAX_ATTEMPTS) {
+            throw new RuntimeException('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+        }
+    }
+
+    private function recordFailedAttempt(string $identifier): void
+    {
+        $db   = get_db();
+        $stmt = $db->prepare('INSERT INTO login_attempts (identifier) VALUES (?)');
+        $stmt->execute([$identifier]);
+
+        $stmt = $db->prepare(
+            'DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL ? SECOND)'
+        );
+        $stmt->execute([self::WINDOW_SECONDS * 2]);
+    }
+
+    private function clearAttempts(string $identifier): void
+    {
+        $db   = get_db();
+        $stmt = $db->prepare('DELETE FROM login_attempts WHERE identifier = ?');
+        $stmt->execute([$identifier]);
     }
 
     public function register(array $body): array

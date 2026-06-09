@@ -1,3 +1,8 @@
+<?php
+require_once __DIR__ . '/app/bootstrap.php';
+require_auth();
+$_csrf = csrf_token();
+?>
 <!doctype html>
 <html lang="pt-BR">
   <head>
@@ -452,6 +457,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="src/config.js"></script>
+    <script>window.LabConCsrfToken = <?= json_encode($_csrf) ?>;</script>
     <script src="src/app.js"></script>
   </body>
 </html>

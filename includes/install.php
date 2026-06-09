@@ -70,28 +70,7 @@ function create_schema(PDO $db): void {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )" . $tableOptions);
 
-    $defaultAdminPasswordHash = '$2y$12$BLAMWlJ.gm0ms0aUp.JwuOyXkw1nOGvxPY9.QD0.BdbLAPmsVYLzq';
-    $badDefaultAdminPasswordHash = '$2y$12$JBwknBUIerRlrokO9W8HNuSHyOE63s.EvweeL05R/882Emh0i8dcK';
-
-    $db->exec("
-        INSERT INTO users (id, email, password_hash, name, role, source)
-        VALUES (
-            'admin-0000000000000000',
-            'admin@labcon.local',
-            '" . $defaultAdminPasswordHash . "',
-            'Administrador Padrão',
-            'administrador',
-            'manual'
-        ) ON DUPLICATE KEY UPDATE id = id");
-
-    $db->exec("
-        UPDATE users
-        SET password_hash = '" . $defaultAdminPasswordHash . "'
-        WHERE id = 'admin-0000000000000000'
-          AND email = 'admin@labcon.local'
-          AND role = 'administrador'
-          AND source = 'manual'
-          AND password_hash = '" . $badDefaultAdminPasswordHash . "'");
+    setup_default_admin($db);
 
     $db->exec("
         CREATE TABLE IF NOT EXISTS labs (
@@ -146,6 +125,13 @@ function create_schema(PDO $db): void {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )" . $tableOptions);
 
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            identifier VARCHAR(255) NOT NULL,
+            attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )" . $tableOptions);
+
     create_index_if_missing($db, 'desks', 'idx_desks_lab_id', 'lab_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_user_id', 'user_id');
     create_index_if_missing($db, 'reservations', 'idx_reservations_lab_id', 'lab_id');
@@ -153,6 +139,51 @@ function create_schema(PDO $db): void {
     create_index_if_missing($db, 'reservations', 'idx_reservations_day', 'day');
     create_index_if_missing($db, 'password_reset_tokens', 'idx_password_reset_token_hash', 'token_hash');
     create_index_if_missing($db, 'password_reset_tokens', 'idx_password_reset_user_id', 'user_id');
+    create_index_if_missing($db, 'login_attempts', 'idx_login_attempts_identifier', 'identifier');
+    create_index_if_missing($db, 'login_attempts', 'idx_login_attempts_attempted_at', 'attempted_at');
+}
+
+function setup_default_admin(PDO $db): void {
+    $knownDefaultHashes = [
+        '$2y$12$BLAMWlJ.gm0ms0aUp.JwuOyXkw1nOGvxPY9.QD0.BdbLAPmsVYLzq',
+        '$2y$12$JBwknBUIerRlrokO9W8HNuSHyOE63s.EvweeL05R/882Emh0i8dcK',
+    ];
+
+    $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = 'admin-0000000000000000'");
+    $stmt->execute();
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        $password = bin2hex(random_bytes(8));
+        $hash     = password_hash($password, PASSWORD_BCRYPT);
+        $stmt     = $db->prepare(
+            "INSERT INTO users (id, email, password_hash, name, role, source)
+             VALUES ('admin-0000000000000000', 'admin@labcon.local', ?, 'Administrador Padrão', 'administrador', 'manual')"
+        );
+        $stmt->execute([$hash]);
+        write_setup_credentials($password);
+        return;
+    }
+
+    if (in_array($row['password_hash'], $knownDefaultHashes, true)) {
+        $password = bin2hex(random_bytes(8));
+        $hash     = password_hash($password, PASSWORD_BCRYPT);
+        $stmt     = $db->prepare("UPDATE users SET password_hash = ? WHERE id = 'admin-0000000000000000'");
+        $stmt->execute([$hash]);
+        write_setup_credentials($password);
+    }
+}
+
+function write_setup_credentials(string $password): void {
+    $msg = "[LabCon] Credencial do administrador — e-mail: admin@labcon.local | senha: $password — Altere após o primeiro acesso.";
+    error_log($msg);
+
+    $setupFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . '.labcon_setup';
+    $content   = "LabCon — Credencial gerada automaticamente\n"
+               . "E-mail : admin@labcon.local\n"
+               . "Senha  : $password\n"
+               . "Apague este arquivo após fazer login e trocar a senha.\n";
+    @file_put_contents($setupFile, $content);
 }
 
 function create_index_if_missing(PDO $db, string $table, string $index, string $column): void {

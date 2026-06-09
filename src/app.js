@@ -23,6 +23,10 @@
     }
   };
 
+  function csrfHeaders() {
+    return { "Content-Type": "application/json", "X-CSRF-Token": window.LabConCsrfToken || "" };
+  }
+
   // ─── Repository ───────────────────────────────────────────────────────────
   const Repository = {
     state: Utils.clone(Config.emptyState),
@@ -41,7 +45,7 @@
       const method   = isNew ? "POST" : "PUT";
       const res      = await fetch(`api/${endpoint}.php`, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify(item)
       });
       const result = await res.json();
@@ -58,7 +62,7 @@
       const endpoint = collection;
       const res = await fetch(`api/${endpoint}.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify({ items })
       });
       const result = await res.json();
@@ -72,7 +76,7 @@
     },
 
     async removeUser(id) {
-      const res    = await fetch(`api/users.php?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res    = await fetch(`api/users.php?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: csrfHeaders() });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao excluir.");
 
@@ -82,7 +86,7 @@
     },
 
     async removeLab(id) {
-      const res    = await fetch(`api/labs.php?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res    = await fetch(`api/labs.php?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: csrfHeaders() });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao excluir.");
 
@@ -93,7 +97,7 @@
     },
 
     async removeDesk(id) {
-      const res    = await fetch(`api/desks.php?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res    = await fetch(`api/desks.php?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: csrfHeaders() });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao excluir.");
 
@@ -102,7 +106,7 @@
     },
 
     async removeReservation(id) {
-      const res    = await fetch(`api/reservations.php?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res    = await fetch(`api/reservations.php?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: csrfHeaders() });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao excluir.");
 
@@ -110,7 +114,7 @@
     },
 
     async clear() {
-      const res    = await fetch("api/state.php", { method: "DELETE" });
+      const res    = await fetch("api/state.php", { method: "DELETE", headers: csrfHeaders() });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "Erro ao limpar.");
       this.state = Utils.clone(Config.emptyState);
@@ -119,7 +123,7 @@
     async seed() {
       const res    = await fetch("api/state.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify({ action: "seed" })
       });
       const result = await res.json();
@@ -137,7 +141,7 @@
     async saveSmtp(settings) {
       const res = await fetch("api/smtp.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify(settings)
       });
       const result = await res.json();
@@ -148,7 +152,7 @@
     async testSmtp(to) {
       const res = await fetch("api/smtp.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders(),
         body: JSON.stringify({ action: "test", to })
       });
       const result = await res.json();

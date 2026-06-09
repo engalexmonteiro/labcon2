@@ -72,10 +72,11 @@ function reservation_to_array(array $row): array {
 }
 
 function upsert_user_record(PDO $db, array $fields): array {
-    $cols   = array_keys($fields);
+    $cols       = array_keys($fields);
+    $quotedCols = array_map(fn(string $c): string => '`' . str_replace('`', '``', $c) . '`', $cols);
     $placeholders = implode(', ', array_fill(0, count($fields), '?'));
-    $updates = implode(', ', array_map(fn($c) => "$c = VALUES($c)", $cols));
-    $sql = 'INSERT INTO users (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')
+    $updates    = implode(', ', array_map(fn(string $qc): string => "$qc = VALUES($qc)", $quotedCols));
+    $sql = 'INSERT INTO `users` (' . implode(', ', $quotedCols) . ') VALUES (' . $placeholders . ')
             ON DUPLICATE KEY UPDATE ' . $updates;
     $stmt = $db->prepare($sql);
     $stmt->execute(array_values($fields));

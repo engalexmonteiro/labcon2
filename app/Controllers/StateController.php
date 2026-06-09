@@ -18,17 +18,30 @@ class StateController
     public function handle(Request $request): void
     {
         if ($request->method() === 'GET') {
-            Response::json($this->state->all());
+            $caller = get_session_user();
+
+            if ($caller) {
+                // Usuário autenticado: retorna estado completo
+                Response::json($this->state->all());
+            }
+
+            // Público: retorna dados mínimos sem PII (apenas nome e papel dos usuários)
+            $full = $this->state->all();
+            $full['users'] = array_map(
+                fn(array $u): array => ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']],
+                $full['users']
+            );
+            Response::json($full);
         }
 
         if ($request->method() === 'DELETE') {
-            require_auth();
+            require_role('administrador');
             $this->state->clear();
             Response::json(['success' => true]);
         }
 
         if ($request->method() === 'POST') {
-            require_auth();
+            require_role('administrador');
             $body = $request->body();
 
             if (($body['action'] ?? '') === 'seed') {
